@@ -1,37 +1,17 @@
-import { Body, Controller, Get, Header, HttpCode, Param, Post, Put, Redirect, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, HttpCode, Param, Post, Put, Redirect, Req, Res } from '@nestjs/common';
 import { createHeroDto } from './dto/create-hero.dto';
 import { UpdateHeroDto } from './dto/update-hero.dto';
-// import { response } from 'express';
-// import { response } from 'express';
-// import { response } from 'express';
-// import { request } from 'http';
-const datas=
-[
-  {
-    id: 1,
-    email: 'test@gmail.com',
-    pesan: 'test',
-  },
-  {
-    id: 2,
-    email: 'testing@gmail.com',
-    pesan: 'testing',
-  },
-  {
-    id: 3,
-    email: 'coba@gmail.com',
-    pesan: 'coba',
-  },
-];
-
+import { HeroService } from './hero.service';
 
 @Controller('hero')
 export class HeroController {
+  constructor(private heroService: HeroService) {}
+
   @Get('index')
   @HttpCode(200)
   @Header('Content-Type', 'application/json') 
   index(@Res() response) {
-    response.json(datas);
+    response.json(this.heroService.findAll());
   }
   
 
@@ -42,19 +22,14 @@ export class HeroController {
   }
 
   @Post('store')
-  store(@Req() request, @Body() hero: createHeroDto, @Res({passthrough: true}) response):object{
-    try{
-      const {id, email, pesan} = request.body;
-      datas.push({
-        id,
-        email,
-        pesan
-      });
-      return hero;
-    } catch(err){
-      response.status(500).json({message: err});
+  store(@Req() request, @Body() hero: createHeroDto, @Res({ passthrough: true }) response): object {
+    try {
+      return this.heroService.create(hero);
+    } catch (err) {
+      response.status(500).json({ message: err });
     }
   }
+  
 
   // @Post('store')
   // store(@Req() request, @Res({passthrough: true}) response){
@@ -65,25 +40,18 @@ export class HeroController {
 
   @Get('detail/:id')
   detail(@Param('id') id:number):object{
-
-    const data= datas.filter((hero) => {
-      if (hero.id== id){
-        return hero.id==id;
-      }
-    })
-    return data[0];
+    return this.heroService.findOne(id);
   }
 
   @Put('update/:id')
-  update(@Param('id') id:number, @Body() heroDto: UpdateHeroDto):object {
-    datas.filter((data) =>{
-      if(data.id == id){
-        data.email= heroDto.email;
-        data.pesan= heroDto.pesan;
-      }
-    });
-
-    return datas;
+  update(@Param('id') id:number, @Body() heroDto: UpdateHeroDto, @Res() response):object {
+    try {
+      this.heroService.update(id,heroDto);
+      response.json({ message: "success" });
+      return 
+    } catch (err) {
+      response.status(500).json({ message: err });
+    }
   }
 
   @Get('test')
@@ -92,5 +60,14 @@ export class HeroController {
     return 'welcome'
   }
 
+  @Delete('delete/:id')
+  delete(@Param('id') id: number, @Res({ passthrough: true }) response): object {
+    try {
+      return this.heroService.destroy(id);
+    } catch (err) {
+      response.status(500).json({ message: err });
+    }
+  }
+  
 
 }
